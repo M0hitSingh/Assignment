@@ -2,7 +2,7 @@ const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy
 const dotenv = require('dotenv');
 const { sendSuccessApiResponse } = require('../middleware/successApiResponse');
-const User = require('../model/User');
+const User = require('../model/user');
 dotenv.config();
 
 passport.serializeUser(function(user, cb) {

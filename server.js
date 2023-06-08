@@ -3,13 +3,10 @@ const dotenv = require('dotenv');
 const express = require("express");
 const mongoose = require('mongoose')
 const passport = require("passport");
-const httpContext = require("express-http-context");
-const notFound = require("./errors/notFound");
 const path = require('path')
-const errorHandlerMiddleware = require("./middleware/errorHandler");
+const notFound = require("./errors/notFound");
 const router = require("./routes");
-const {logRequest , generateRequestId} = require('./middleware/commonMiddleware')
-const logger = require('./util/logger');
+const errorHandlerMiddleware = require('./middleware/errorHandler');
 
 const corsOptions = {
     origin: "*",
@@ -27,49 +24,56 @@ const app = express();
 
 
 //public 
-app.use('/public',express.static('public'))
+const tempelatePath = path.join(__dirname, './view')
+const publicPath = path.join(__dirname, './public')
+console.log(publicPath);
 
-const MONGO_URI = process.env.MONGO_URI 
+app.set('view engine', 'hbs')
+app.set('views', tempelatePath)
+app.use(express.static(publicPath))
 
-// Set HTTP context
-app.use(httpContext.middleware);
-app.use(generateRequestId);
+
 
 // ADD THIS IS YOUR CONNECTION FILE
 mongoose.set('strictQuery', true);
-logger.info(`Logger Activated at ${process.env.ENV_LEVEL}`);
+
 // Connecting Database
+const MONGO_URI = process.env.MONGO_URI 
 const connectDB = mongoose.connect(MONGO_URI,{
     useNewUrlParser:true,
     useUnifiedTopology:true
 })
-.then(logger.info("DB Connected Succesfully...."))
+.then(console.log("DB Connected Succesfully...."))
 .catch((err)=>{
     console.log("DB Connection Failed!")
-    console.log(err)
     process.exit(1)
 });
 
 // Express configuration
 app.use(express.json());
+app.set("view engine","hbs")
+app.set("views",)
 app.use(express.urlencoded({ extended: true, limit: "5mb" }));
 
 // CORS configuration
 app.use(cors(corsOptions));
 app.options("*", cors);
 
-// Log all the requests and response.
-app.use(logRequest);
-// app.use(logResponse);
 
+app.get('/signup', (req, res) => {
+    res.render('signup')
+})
+app.get('/login', (req, res) => {
+    res.render('login')
+})
 app.use(router);
 
 // Error handling
+app.use(errorHandlerMiddleware)
 app.use(notFound);
-app.use(errorHandlerMiddleware);
 
 app.listen(process.env.PORT,()=>{
-    logger.info("App is running at http://localhost:%d ",process.env.PORT);
+    console.log("App is running at http://localhost:%d ",process.env.PORT);
 });
 
 process.on("SIGTERM", shutDown);
@@ -77,14 +81,14 @@ process.on("SIGINT", shutDown);
 // Shutdown express server gracefully.
 
 function shutDown() {
-    logger.info("Received kill signal, shutting down gracefully");
+    console.log("Received kill signal, shutting down gracefully");
     server.close(() => {
-        logger.info("Closed out remaining connections");
+        console.log("Closed out remaining connections");
         process.exit(0);
     });
 
     setTimeout(() => {
-        logger.info("Could not close connections in time, forcefully shutting down");
+        console.log("Could not close connections in time, forcefully shutting down");
         process.exit(1);
     }, 10000);
 }
